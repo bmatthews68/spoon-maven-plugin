@@ -16,6 +16,7 @@
 
 package com.btmatthews.maven.plugins.spoon;
 
+import com.btmatthews.maven.plugins.spoon.processors.GroovyProcessor;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -27,6 +28,7 @@ import org.apache.maven.project.MavenProject;
 import spoon.processing.Builder;
 import spoon.processing.ProcessingManager;
 import spoon.reflect.Factory;
+import spoon.reflect.declaration.CtElement;
 import spoon.support.DefaultCoreFactory;
 import spoon.support.JavaOutputProcessor;
 import spoon.support.QueueProcessingManager;
@@ -106,7 +108,14 @@ public class SpoonMojo extends AbstractMojo {
         final ProcessingManager processing = new QueueProcessingManager(factory);
         for (final String processor : processors) {
             getLog().info("Adding processor: " + processor);
-            processing.addProcessor(processor);
+            if (processor.endsWith(".groovy")) {
+                final File script = new File(processor);
+                if (script.exists()) {
+                    processing.addProcessor(new GroovyProcessor<CtElement>(script));
+                }
+            } else {
+                processing.addProcessor(processor);
+            }
         }
         processing.addProcessor(new JavaOutputProcessor(outputDirectory));
 

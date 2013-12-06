@@ -39,7 +39,7 @@
                                 <inputSource>src/main/checkout</inputSource>
                             </inputSources>
                             <processors>
-                                <processor>com.btmatthews.maven.plugins.spoon.processors.Log4J2SLF4J</processor>
+                                <processor>src/main/groovy/noop.groovy</processor>
                             </processors>
                         </configuration>
                     </execution>
