@@ -2,6 +2,7 @@ package com.btmatthews.maven.plugins.spoon.processors;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
+import groovy.lang.Script;
 import spoon.processing.AbstractProcessor;
 import spoon.processing.Severity;
 import spoon.reflect.declaration.CtElement;
@@ -11,20 +12,17 @@ import java.io.IOException;
 
 public class GroovyProcessor<T extends CtElement> extends AbstractProcessor<T> {
 
-    private final File script;
+    private final Script script;
 
-    public GroovyProcessor(final File script) {
-        this.script = script;
+    public GroovyProcessor(final File script) throws IOException {
+        this.script = new GroovyShell().parse(script);
     }
 
     @Override
     public void process(final T element) {
         final Binding binding = new Binding();
         binding.setVariable("element", element);
-        try {
-            new GroovyShell(binding).evaluate(script);
-        } catch (final IOException e) {
-            getEnvironment().report(this, Severity.ERROR, element, e.getMessage());
-        }
+        script.setBinding(binding);
+        script.run();
     }
 }
