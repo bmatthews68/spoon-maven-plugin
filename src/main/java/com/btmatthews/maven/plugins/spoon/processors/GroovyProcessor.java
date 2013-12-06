@@ -22,6 +22,7 @@ public class GroovyProcessor<T extends CtElement> extends AbstractProcessor<T> {
     public void process(final T element) {
         final Binding binding = new Binding();
         binding.setVariable("element", element);
+        binding.setVariable("factory", getFactory());
         script.setBinding(binding);
         script.run();
     }
