@@ -1,0 +1,9 @@
+<component-set>
+    <components>
+        <component>
+            <role>org.codehaus.plexus.component.configurator.ComponentConfigurator</role>
+            <role-hint>include-project-dependencies</role-hint>
+            <implementation>com.btmatthews.maven.plugins.spoon.IncludeProjectDependenciesComponentConfigurator</implementation>
+        </component>
+    </components>
+</component-set>
