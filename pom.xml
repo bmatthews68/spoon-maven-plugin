@@ -241,23 +241,23 @@
         </plugins>
     </reporting>
     <scm>
-        <connection>scm:git:git@github.com:bmatthews68/crx-maven-plugin.git</connection>
-        <url>https://github.com/bmatthews68/crx-maven-plugin</url>
-        <developerConnection>scm:git:git@github.com:bmatthews68/crx-maven-plugin.git</developerConnection>
+        <connection>scm:git:git@github.com:bmatthews68/spoon-maven-plugin.git</connection>
+        <url>https://github.com/bmatthews68/spoon-maven-plugin</url>
+        <developerConnection>scm:git:git@github.com:bmatthews68/spoon-maven-plugin.git</developerConnection>
     </scm>
-    <url>http://crx-maven-plugin.btmatthews.com</url>
+    <url>http://spoon-maven-plugin.btmatthews.com</url>
     <organization>
         <name>Brian Matthews</name>
         <url>http://btmatthews.com</url>
     </organization>
     <issueManagement>
-        <url>https://github.com/bmatthews68/crx-maven-plugin/issues</url>
+        <url>https://github.com/bmatthews68/spoon-maven-plugin/issues</url>
         <system>GitHub</system>
     </issueManagement>
     <distributionManagement>
         <site>
             <id>gh-pages</id>
-            <url>gitsite:git@github.com/bmatthews68/crx-maven-plugin.git</url>
+            <url>gitsite:git@github.com/bmatthews68/spoon-maven-plugin.git</url>
         </site>
         <repository>
             <id>releases.sonatype</id>
