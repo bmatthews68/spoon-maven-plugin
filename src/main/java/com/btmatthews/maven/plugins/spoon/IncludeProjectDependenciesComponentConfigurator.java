@@ -1,6 +1,8 @@
 package com.btmatthews.maven.plugins.spoon;
 
-import org.codehaus.classworlds.ClassRealm;
+//import org.codehaus.classworlds.ClassRealm;
+
+import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.configurator.AbstractComponentConfigurator;
 import org.codehaus.plexus.component.configurator.ComponentConfigurationException;
@@ -20,6 +22,7 @@ import java.util.List;
 
 @Component(role = ComponentConfigurator.class, hint = "include-project-dependencies")
 public class IncludeProjectDependenciesComponentConfigurator extends AbstractComponentConfigurator {
+
     @Override
     public void configureComponent(final Object component,
                                    final PlexusConfiguration configuration,
@@ -34,8 +37,8 @@ public class IncludeProjectDependenciesComponentConfigurator extends AbstractCom
 
         final ObjectWithFieldsConverter converter = new ObjectWithFieldsConverter();
 
-        converter.processConfiguration(converterLookup, component, containerRealm.getClassLoader(),
-                configuration, expressionEvaluator, listener);
+        converter.processConfiguration(converterLookup, component, containerRealm, configuration,
+                expressionEvaluator,  listener);
     }
 
     private void addProjectDependenciesToClassRealm(final ExpressionEvaluator expressionEvaluator,
@@ -46,10 +49,8 @@ public class IncludeProjectDependenciesComponentConfigurator extends AbstractCom
                     .evaluate("${project.compileClasspathElements}");
 
             if (classpathElements != null) {
-                final URL[] testUrls = buildURLs(classpathElements);
-                for (final URL url : testUrls) {
-                    containerRealm.addConstituent(url);
-
+                for (final URL url : buildURLs(classpathElements)) {
+                    containerRealm.addURL(url);
                 }
             }
         } catch (final ExpressionEvaluationException e) {
@@ -58,17 +59,17 @@ public class IncludeProjectDependenciesComponentConfigurator extends AbstractCom
         }
     }
 
-    private URL[] buildURLs(final List<String> runtimeClasspathElements)
+    private List<URL> buildURLs(final List<String> classpathElements)
             throws ComponentConfigurationException {
-        final List<URL> urls = new ArrayList<URL>(runtimeClasspathElements.size());
-        for (final String element : runtimeClasspathElements) {
+        final List<URL> urls = new ArrayList<URL>(classpathElements.size());
+        for (final String classpathElement : classpathElements) {
             try {
-                final URL url = new File(element).toURI().toURL();
+                final URL url = new File(classpathElement).toURI().toURL();
                 urls.add(url);
             } catch (final MalformedURLException e) {
-                throw new ComponentConfigurationException("Unable to access project dependency: " + element, e);
+                throw new ComponentConfigurationException("Unable to access project dependency: " + classpathElement, e);
             }
         }
-        return urls.toArray(new URL[urls.size()]);
+        return urls;
     }
 }

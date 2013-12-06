@@ -16,6 +16,7 @@
 
 package com.btmatthews.maven.plugins.spoon;
 
+import com.btmatthews.maven.plugins.spoon.processors.GroovyProcessor;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -23,16 +24,17 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
 import spoon.processing.Builder;
 import spoon.processing.ProcessingManager;
 import spoon.reflect.Factory;
+import spoon.reflect.declaration.CtElement;
 import spoon.support.DefaultCoreFactory;
 import spoon.support.JavaOutputProcessor;
 import spoon.support.QueueProcessingManager;
 import spoon.support.StandardEnvironment;
 
 import java.io.File;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,11 +45,11 @@ import java.util.regex.Pattern;
 @Mojo(
         name = "spoon",
         defaultPhase = LifecyclePhase.PROCESS_SOURCES,
-        requiresDependencyResolution = ResolutionScope.COMPILE,
+        requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME,
         configurator = "include-project-dependencies")
 public class SpoonMojo extends AbstractMojo {
 
-    @Parameter(defaultValue = "${maven.compiler.source}", required = true)
+    @Parameter(property = "maven.compiler.source", defaultValue = "1.5")
     private String source;
     @Parameter(required = true)
     private File[] inputSources;
@@ -55,13 +57,17 @@ public class SpoonMojo extends AbstractMojo {
     private String[] processors;
     @Parameter(defaultValue = "${project.build.directory}/spooned", required = true)
     private File outputDirectory;
+    @Parameter(property = "project", required=true, readonly = true)
+    private MavenProject project;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        final Matcher matcher = Pattern.compile("^1.([5-8])$").matcher(source);
-        if (matcher.matches()) {
+        final int complianceLevel = getComplianceLevel();
+        if (complianceLevel >= 5 && complianceLevel <= 8) {
             try {
-                doExecute(Integer.valueOf(matcher.group(1)));
+                outputDirectory.mkdirs();
+                doExecute(complianceLevel);
+                project.addCompileSourceRoot(outputDirectory.getAbsolutePath());
             } catch (final Exception e) {
                 getLog().error(e.getMessage(), e);
                 throw new MojoExecutionException(e.getMessage(), e);
@@ -73,31 +79,48 @@ public class SpoonMojo extends AbstractMojo {
         }
     }
 
+    private int getComplianceLevel() {
+            final Matcher matcher = Pattern.compile("^1\\.([5-8])$").matcher(source);
+            if (matcher.matches()) {
+                return Integer.valueOf(matcher.group(1));
+            } else {
+                return 0;
+            }
+    }
+
     private void doExecute(final int complianceLevel) throws Exception {
         final StandardEnvironment env = new StandardEnvironment();
         env.setVerbose(false);
         env.setDebug(false);
         env.setComplianceLevel(complianceLevel);
 
-        final JavaOutputProcessor printer = new JavaOutputProcessor(outputDirectory);
-        env.setDefaultFileGenerator(printer);
+        getLog().info("Write processed sources to: " + outputDirectory.getAbsolutePath());
 
         final Factory factory = new Factory(new DefaultCoreFactory(), env);
 
         final Builder builder = factory.getBuilder();
         for (final File inputSource : inputSources) {
+            getLog().info("Adding input source: " + inputSource.getPath());
             builder.addInputSource(inputSource);
         }
         builder.build();
 
         final ProcessingManager processing = new QueueProcessingManager(factory);
-        for (String processor : processors) {
-            processing.addProcessor(processor);
+        for (final String processor : processors) {
+            getLog().info("Adding processor: " + processor);
+            if (processor.endsWith(".groovy")) {
+                final File script = new File(processor);
+                if (script.exists()) {
+                    processing.addProcessor(new GroovyProcessor<CtElement>(script));
+                }
+            } else {
+                processing.addProcessor(processor);
+            }
         }
-        processing.process();
+        processing.addProcessor(new JavaOutputProcessor(outputDirectory));
 
-        final ProcessingManager printing = new QueueProcessingManager(factory);
-        printing.addProcessor(env.getDefaultFileGenerator());
-        printing.process();
+        getLog().info("Started processing input sources");
+        processing.process();
+        getLog().info("Finished processing input sources");
     }
 }
