@@ -23,6 +23,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
 import spoon.processing.Builder;
 import spoon.processing.ProcessingManager;
 import spoon.reflect.Factory;
@@ -46,7 +47,7 @@ import java.util.regex.Pattern;
         configurator = "include-project-dependencies")
 public class SpoonMojo extends AbstractMojo {
 
-    @Parameter(defaultValue = "${maven.compiler.source}", required = true)
+    @Parameter(property = "maven.compiler.source", defaultValue = "1.5")
     private String source;
     @Parameter(required = true)
     private File[] inputSources;
@@ -54,13 +55,17 @@ public class SpoonMojo extends AbstractMojo {
     private String[] processors;
     @Parameter(defaultValue = "${project.build.directory}/spooned", required = true)
     private File outputDirectory;
+    @Parameter(property = "project")
+    private MavenProject project;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         final int complianceLevel = getComplianceLevel();
         if (complianceLevel >= 5 && complianceLevel <= 8) {
             try {
+                outputDirectory.mkdirs();
                 doExecute(complianceLevel);
+                project.addCompileSourceRoot(outputDirectory.getAbsolutePath());
             } catch (final Exception e) {
                 getLog().error(e.getMessage(), e);
                 throw new MojoExecutionException(e.getMessage(), e);
@@ -73,27 +78,21 @@ public class SpoonMojo extends AbstractMojo {
     }
 
     private int getComplianceLevel() {
-        if (source == null || source.isEmpty()) {
-            getLog().info("Using default source compliance level: 1.5");
-            return 5;
-        } else {
             final Matcher matcher = Pattern.compile("^1\\.([5-8])$").matcher(source);
             if (matcher.matches()) {
                 return Integer.valueOf(matcher.group(1));
             } else {
                 return 0;
             }
-        }
     }
 
     private void doExecute(final int complianceLevel) throws Exception {
         final StandardEnvironment env = new StandardEnvironment();
         env.setVerbose(false);
-        env.setDebug(false);
+        env.setDebug(true);
         env.setComplianceLevel(complianceLevel);
 
-        final JavaOutputProcessor printer = new JavaOutputProcessor(outputDirectory);
-        env.setDefaultFileGenerator(printer);
+        getLog().info("Write processed sources to: " + outputDirectory.getAbsolutePath());
 
         final Factory factory = new Factory(new DefaultCoreFactory(), env);
 
@@ -104,20 +103,15 @@ public class SpoonMojo extends AbstractMojo {
         }
         builder.build();
 
-
         final ProcessingManager processing = new QueueProcessingManager(factory);
-        for (String processor : processors) {
+        for (final String processor : processors) {
             getLog().info("Adding processor: " + processor);
             processing.addProcessor(processor);
         }
-        processing.addProcessor(env.getDefaultFileGenerator());
+        processing.addProcessor(new JavaOutputProcessor(outputDirectory));
 
         getLog().info("Started processing input sources");
         processing.process();
         getLog().info("Finished processing input sources");
-
-        //final ProcessingManager printing = new QueueProcessingManager(factory);
-        //printing.addProcessor(env.getDefaultFileGenerator());
-        //printing.process();
     }
 }
