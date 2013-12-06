@@ -43,7 +43,7 @@ import java.util.regex.Pattern;
 @Mojo(
         name = "spoon",
         defaultPhase = LifecyclePhase.PROCESS_SOURCES,
-        requiresDependencyResolution = ResolutionScope.COMPILE,
+        requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME,
         configurator = "include-project-dependencies")
 public class SpoonMojo extends AbstractMojo {
 
@@ -55,7 +55,7 @@ public class SpoonMojo extends AbstractMojo {
     private String[] processors;
     @Parameter(defaultValue = "${project.build.directory}/spooned", required = true)
     private File outputDirectory;
-    @Parameter(property = "project")
+    @Parameter(property = "project", required=true, readonly = true)
     private MavenProject project;
 
     @Override
@@ -89,7 +89,7 @@ public class SpoonMojo extends AbstractMojo {
     private void doExecute(final int complianceLevel) throws Exception {
         final StandardEnvironment env = new StandardEnvironment();
         env.setVerbose(false);
-        env.setDebug(true);
+        env.setDebug(false);
         env.setComplianceLevel(complianceLevel);
 
         getLog().info("Write processed sources to: " + outputDirectory.getAbsolutePath());
