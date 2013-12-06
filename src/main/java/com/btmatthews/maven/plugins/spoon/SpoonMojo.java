@@ -32,7 +32,6 @@ import spoon.support.QueueProcessingManager;
 import spoon.support.StandardEnvironment;
 
 import java.io.File;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,10 +57,10 @@ public class SpoonMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        final Matcher matcher = Pattern.compile("^1.([5-8])$").matcher(source);
-        if (matcher.matches()) {
+        final int complianceLevel = getComplianceLevel();
+        if (complianceLevel >= 5 && complianceLevel <= 8) {
             try {
-                doExecute(Integer.valueOf(matcher.group(1)));
+                doExecute(complianceLevel);
             } catch (final Exception e) {
                 getLog().error(e.getMessage(), e);
                 throw new MojoExecutionException(e.getMessage(), e);
@@ -70,6 +69,20 @@ public class SpoonMojo extends AbstractMojo {
             final String message = "Invalid or unsupported source level. Must be 1.5, 1.6, 1.7 or 1.8";
             getLog().error(message);
             throw new MojoExecutionException(message);
+        }
+    }
+
+    private int getComplianceLevel() {
+        if (source == null || source.isEmpty()) {
+            getLog().info("Using default source compliance level: 1.5");
+            return 5;
+        } else {
+            final Matcher matcher = Pattern.compile("^1\\.([5-8])$").matcher(source);
+            if (matcher.matches()) {
+                return Integer.valueOf(matcher.group(1));
+            } else {
+                return 0;
+            }
         }
     }
 
@@ -86,18 +99,25 @@ public class SpoonMojo extends AbstractMojo {
 
         final Builder builder = factory.getBuilder();
         for (final File inputSource : inputSources) {
+            getLog().info("Adding input source: " + inputSource.getPath());
             builder.addInputSource(inputSource);
         }
         builder.build();
 
+
         final ProcessingManager processing = new QueueProcessingManager(factory);
         for (String processor : processors) {
+            getLog().info("Adding processor: " + processor);
             processing.addProcessor(processor);
         }
-        processing.process();
+        processing.addProcessor(env.getDefaultFileGenerator());
 
-        final ProcessingManager printing = new QueueProcessingManager(factory);
-        printing.addProcessor(env.getDefaultFileGenerator());
-        printing.process();
+        getLog().info("Started processing input sources");
+        processing.process();
+        getLog().info("Finished processing input sources");
+
+        //final ProcessingManager printing = new QueueProcessingManager(factory);
+        //printing.addProcessor(env.getDefaultFileGenerator());
+        //printing.process();
     }
 }
