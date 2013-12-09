@@ -1,0 +1,3 @@
+com.btmatthews.maven.plugins.spoon
+com.btmatthews.maven.plugins.spoon.processors
+spoon.support.builder
