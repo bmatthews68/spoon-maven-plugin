@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Brian Thomas Matthews
+ * Copyright 2013 Brian Matthews
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,17 +49,35 @@ import java.util.regex.Pattern;
         configurator = "include-project-dependencies")
 public class SpoonMojo extends AbstractMojo {
 
+    /**
+     * The Java compliance level.
+     */
     @Parameter(property = "maven.compiler.source", defaultValue = "1.5")
     private String source;
+    /**
+     * A list of folders containing Java source files to be processed.
+     */
     @Parameter(required = true)
     private File[] inputSources;
+    /**
+     * A list of Spoon processors. A processor can be a fully qualified class name or the path for a Groovy script.
+     */
     @Parameter(required = true)
     private String[] processors;
+    /**
+     * The Maven project descriptor.
+     */
     @Parameter(defaultValue = "${project.build.directory}/spooned", required = true)
     private File outputDirectory;
-    @Parameter(property = "project", required=true, readonly = true)
+    /**
+     *
+     */
+    @Parameter(property = "project", required = true, readonly = true)
     private MavenProject project;
 
+    /**
+     * @throws MojoExecutionException
+     */
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         final int complianceLevel = getComplianceLevel();
@@ -79,23 +97,33 @@ public class SpoonMojo extends AbstractMojo {
         }
     }
 
+    /**
+     * Parse the source compliance level.
+     *
+     * @return The source compliance level or {@code 0} if the source compliance level could not be parsed.
+     */
     private int getComplianceLevel() {
-            final Matcher matcher = Pattern.compile("^1\\.([5-8])$").matcher(source);
-            if (matcher.matches()) {
-                return Integer.valueOf(matcher.group(1));
-            } else {
-                return 0;
-            }
+        final Matcher matcher = Pattern.compile("^1\\.([5-8])$").matcher(source);
+        if (matcher.matches()) {
+            return Integer.valueOf(matcher.group(1));
+        } else {
+            return 0;
+        }
     }
 
+    /**
+     * @param complianceLevel
+     * @throws Exception
+     */
     private void doExecute(final int complianceLevel) throws Exception {
+
+        getLog().info("Source compliance level: 1." + complianceLevel);
+        getLog().info("Write processed sources to: " + outputDirectory.getAbsolutePath());
+
         final StandardEnvironment env = new StandardEnvironment();
         env.setVerbose(false);
         env.setDebug(false);
         env.setComplianceLevel(complianceLevel);
-
-        getLog().info("Write processed sources to: " + outputDirectory.getAbsolutePath());
-
         final Factory factory = new Factory(new DefaultCoreFactory(), env);
 
         final Builder builder = factory.getBuilder();
@@ -118,9 +146,6 @@ public class SpoonMojo extends AbstractMojo {
             }
         }
         processing.addProcessor(new JavaOutputProcessor(outputDirectory));
-
-        getLog().info("Started processing input sources");
         processing.process();
-        getLog().info("Finished processing input sources");
     }
 }
