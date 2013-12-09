@@ -21,10 +21,10 @@
     </prerequisites>
     <groupId>com.btmatthews.maven.plugins</groupId>
     <artifactId>spoon-maven-plugin</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
     <name>Spoon Maven Plugin</name>
-    <description />
+    <description>Process Java source files using Spoon</description>
     <inceptionYear>2013</inceptionYear>
     <licenses>
         <license>
